@@ -5,4 +5,6 @@ add_executable(lab1
             main.c 
             input.c
             time_utils.c
+            controller.c
+            simulator.c
             )

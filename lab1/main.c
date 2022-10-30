@@ -1,21 +1,26 @@
-#include "input.h"
-
-#include <stdio.h>
+#include "controller.h"
 #include "time_utils.h"
+#include <signal.h>
+
+static void sigint_handler(int signum)
+{
+    controller_stop();
+}
 
 int main()
 {
+    signal(SIGINT, sigint_handler);
+
     input_t *inputs[] = {
         input_new(1, 500, 100),
-        input_new(2, 300, 10),
+        input_new(2, 100, 50),
     };
+    int num_inputs = 2;
 
-    input_set_state(inputs[0], 10);
-    printf("%d\n", input_get_state(inputs[0]).state);
+    time_utils_init();
+    controller_init(inputs, num_inputs);
 
-    time_utils_delay_for(1000);
-
-    printf("%d\n", input_get_state(inputs[1]).state);
+    controller_run();
 
     return 0;
 }
