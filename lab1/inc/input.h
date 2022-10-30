@@ -1,3 +1,5 @@
+#ifndef _INPUT_H_
+#define _INPUT_H_
 
 struct _input_t;
 typedef struct _input_t input_t;
@@ -20,3 +22,5 @@ input_response_t input_get_response(input_t *this);
 unsigned long input_get_first_occurence(input_t *this);
 unsigned long input_get_period(input_t *this);
 unsigned int input_get_id(input_t *this);
+
+#endif

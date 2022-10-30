@@ -1,5 +1,8 @@
-#include "input.h"
+#ifndef _SIMULATOR_H_
+#define _SIMULATOR_H_
 
 void simulator_init(int num_inputs, int K);
-void simulator_run(input_t *input);
+extern void *simulator_run(void *input);
 void simulator_stop_all();
+
+#endif
