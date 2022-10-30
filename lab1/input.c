@@ -24,6 +24,12 @@ input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occu
         p_input->id = id;
         p_input->period = period;
         p_input->first_occurence = first_occurence;
+
+        p_input->input_state.state = 0;
+        p_input->input_state.timestamp = 0;
+
+        p_input->input_response.response = 0;
+        p_input->input_response.timestamp = 0;
     }
 
     return p_input;
@@ -55,4 +61,24 @@ void input_set_response(input_t *this, int response)
 input_response_t input_get_response(input_t *this)
 {
     return this->input_response;
+}
+
+unsigned long input_get_first_occurence(input_t *this)
+{
+    if (NULL != this)
+    {
+        return this->first_occurence;
+    }
+
+    return 0;
+}
+
+unsigned long input_get_period(input_t *this)
+{
+    if (NULL != this)
+    {
+        return this->period;
+    }
+
+    return 0;
 }

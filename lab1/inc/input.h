@@ -17,3 +17,5 @@ void input_set_state(input_t *this, int state);
 input_state_t input_get_state(input_t *this);
 void input_set_response(input_t *this, int response);
 input_response_t input_get_response(input_t *this);
+unsigned long input_get_first_occurence(input_t *this);
+unsigned long input_get_period(input_t *this);

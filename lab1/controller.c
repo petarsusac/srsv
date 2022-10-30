@@ -3,6 +3,9 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <stdio.h>
+#include "simulator.h"
+
+#define K (2U)
 
 static struct _config
 {
@@ -22,9 +25,10 @@ void controller_run()
 {
     // Stvori dretve koje postavljaju ulaze
     pthread_t tid[config.num_inputs];
+    simulator_init(config.num_inputs, K);
     for (int i = 0; i < config.num_inputs; i++)
     {
-        if (pthread_create(tid[i], NULL, posao_dretve, arg))
+        if (pthread_create(tid[i], NULL, simulator_run, (void *) config.inputs[i]))
         {
             perror("Error: pthread_create");
         }
