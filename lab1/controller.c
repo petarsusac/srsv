@@ -3,7 +3,9 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "simulator.h"
+#include "time_utils.h"
 
 #define K (2U)
 
@@ -14,11 +16,47 @@ static struct _config
     bool simulation_running;
 } config;
 
+static int generate_response(int state)
+{
+    // Vrati samo kopiju stanja (zasad)
+    return state;
+}
+
+static void simulate_input_processing()
+{
+    // Generiraj nasumican broj izmedu 0 i 100
+    int rand_num = rand() % 100;
+    
+    // Distribucija vjerojatnosti razlicitih vremena obrade
+    int num_values = 4;
+    int processing_times_ms[] = {30, 50, 80, 120};
+    int probabilities_percent[] = {20, 50, 20, 10};
+
+    // Izracunaj u koji od intervala je upala slucajna vrijednost
+    for (int i = 0; i < probabilities_percent; i++)
+    {
+        int interval = 0;
+        for (int j = 0; j <= i; j++)
+        {
+            interval += probabilities_percent[j];
+        }
+
+        if (rand_num < interval)
+        {
+            // Odgodi izvrsavanje dretve
+            time_utils_delay_for(processing_times_ms[i]);
+            break;
+        }
+    }
+}
+
 void controller_init(input_t **inputs, int num_inputs)
 {
     config.inputs = inputs;
     config.num_inputs = num_inputs;
     config.simulation_running = true;
+
+    srand(time(NULL));
 }
 
 void controller_run()
@@ -50,7 +88,7 @@ void controller_run()
             if (input_state.state != last_state[i])
             {
                 simulate_input_processing();
-                input_set_response(config.inputs[i], generate_response());
+                input_set_response(config.inputs[i], generate_response(input_state.state));
             }
         }
     }

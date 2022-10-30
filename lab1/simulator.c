@@ -48,8 +48,6 @@ void simulator_init(int num_inputs, int K)
     total_stats.max_response_time = 0;
     total_stats.num_problems = 0;
     total_stats.sum_response_times = 0;
-
-    srand(time(NULL));
 }
 
 void simulator_run(input_t *input)
