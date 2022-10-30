@@ -12,7 +12,7 @@ struct _input_t
     // dinamicka svojstva (dretve ih mogu mijenjati)
     input_state_t input_state;
     input_response_t input_response;
-} _input_t;
+};
 
 input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occurence)
 {
