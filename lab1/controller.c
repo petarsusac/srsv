@@ -8,6 +8,7 @@
 #include "time_utils.h"
 
 #define K (2U)
+#define LOG_MESSAGE_LENGTH (100U)
 
 static struct _config
 {
@@ -79,6 +80,8 @@ void controller_run()
         last_state[i] = 0;
     }
 
+    char msg[LOG_MESSAGE_LENGTH];
+
     // Upravljacka petlja
     while (config.simulation_running)
     {
@@ -87,8 +90,19 @@ void controller_run()
             input_state_t input_state = input_get_state(config.inputs[i]);
             if (input_state.state != last_state[i])
             {
+                sprintf(msg, "Upravljac: ulaz %d: promjena (%d -> %d), obradujem",
+                        input_get_id(config.inputs[i]), last_state[i], input_state.state);
+                time_utils_print_timestamp(msg);
+
                 simulate_input_processing();
-                input_set_response(config.inputs[i], generate_response(input_state.state));
+
+                int response = generate_response(input_state.state);
+
+                sprintf(msg, "Upravljac: ulaz %d: kraj obrade, postavljam odgovor %d",
+                        input_get_id(config.inputs[i]), response);
+                time_utils_print_timestamp(msg);
+
+                input_set_response(config.inputs[i], response);
             }
         }
     }

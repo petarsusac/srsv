@@ -82,3 +82,13 @@ unsigned long input_get_period(input_t *this)
 
     return 0;
 }
+
+unsigned int input_get_id(input_t *this)
+{
+    if (NULL != this)
+    {
+        return this->id;
+    }
+
+    return 0;
+}

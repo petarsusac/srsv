@@ -9,6 +9,7 @@
 #define SHORT_SLEEP_INTERVAL_MS (5U)
 #define STATE_MIN (100U)
 #define STATE_MAX (999U)
+#define LOG_MESSAGE_LENGTH (100U)
 
 typedef struct _stats_t
 {
@@ -68,9 +69,17 @@ void simulator_run(input_t *input)
         // Pamtiti zadnji odgovor kako bi se znalo je li dosao novi odgovor
         int last_response = 0;
 
+        char msg[LOG_MESSAGE_LENGTH];
+        
         while(config.simulation_running)
         {
-            input_set_state(input, generate_state());
+            int new_state = generate_state();
+
+            sprintf(msg, "Dretva %d: promjena stanja ulaza (nova vrijednost %d)",
+                    input_get_id(input), new_state);
+            time_utils_print_timestamp(msg);
+
+            input_set_state(input, new_state);
             stats.num_state_changes += 1;
 
             input_response_t input_response = input_get_response(input);
@@ -87,10 +96,17 @@ void simulator_run(input_t *input)
             unsigned long response_timestamp_ms = input_get_response(input).timestamp;
             unsigned long response_time_ms = response_timestamp_ms - state_change_timestamp_ms;
 
+            sprintf(msg, "Dretva %d: odgovoreno, %d od promjene", 
+                    input_get_id(input), response_time_ms);
+            time_utils_print_timestamp(msg);
+
             // Azuriraj statistiku
             if (response_time_ms > input_get_period(input))
             {
                 stats.num_problems += 1;
+
+                sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(input));
+                time_utils_print_timestamp(msg);
             }
 
             stats.sum_response_times += response_time_ms;
@@ -108,6 +124,9 @@ void simulator_run(input_t *input)
             {
                 delay_until_ms += generate_added_delay(input_get_period(input), config.K);
             }
+
+            sprintf(msg, "Dretva %d: spavam do %d", input_get_id(input), delay_until_ms);
+            time_utils_print_timestamp(msg);
 
             time_utils_delay_until(delay_until_ms);
         }

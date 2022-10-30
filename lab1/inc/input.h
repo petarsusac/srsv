@@ -19,3 +19,4 @@ void input_set_response(input_t *this, int response);
 input_response_t input_get_response(input_t *this);
 unsigned long input_get_first_occurence(input_t *this);
 unsigned long input_get_period(input_t *this);
+unsigned int input_get_id(input_t *this);
