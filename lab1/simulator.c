@@ -3,8 +3,12 @@
 #include <stdbool.h>
 #include "time_utils.h"
 #include <stdio.h>
+#include <time.h>
+#include <stdlib.h>
 
 #define SHORT_SLEEP_INTERVAL_MS (5U)
+#define STATE_MIN (100U)
+#define STATE_MAX (999U)
 
 typedef struct _stats_t
 {
@@ -24,6 +28,16 @@ static struct _config
     unsigned int K; // konstanta koja odreduje koliko cesto dolaze promjene stanja
 } config;
 
+static int generate_state()
+{
+    return rand() % (STATE_MAX - STATE_MIN + 1) + STATE_MIN;
+}
+
+static unsigned int generate_added_delay(unsigned int period, unsigned int K)
+{
+    return (rand() % (K - 1)) * period;
+}
+
 void simulator_init(int num_inputs, int K)
 {
     config.num_inputs = num_inputs;
@@ -34,6 +48,8 @@ void simulator_init(int num_inputs, int K)
     total_stats.max_response_time = 0;
     total_stats.num_problems = 0;
     total_stats.sum_response_times = 0;
+
+    srand(time(NULL));
 }
 
 void simulator_run(input_t *input)
