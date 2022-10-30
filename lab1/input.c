@@ -1,6 +1,7 @@
 #include "input.h"
 
 #include <stdlib.h>
+#include "time_utils.h"
 
 struct _input_t 
 {
@@ -33,11 +34,25 @@ void input_set_state(input_t *this, int state)
     if (NULL != this)
     {
         this->input_state.state = state;
-        this->input_state.timestamp = 0;
+        this->input_state.timestamp = time_utils_get_time_ms();
     }
 }
 
 input_state_t input_get_state(input_t *this)
 {
     return this->input_state;
+}
+
+void input_set_response(input_t *this, int response)
+{
+    if (NULL != this)
+    {
+        this->input_response.response = response;
+        this->input_response.timestamp = time_utils_get_time_ms();
+    }
+}
+
+input_response_t input_get_response(input_t *this)
+{
+    return this->input_response;
 }
