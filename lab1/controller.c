@@ -34,7 +34,7 @@ static void simulate_input_processing()
     int probabilities_percent[] = {20, 50, 20, 10};
 
     // Izracunaj u koji od intervala je upala slucajna vrijednost
-    for (int i = 0; i < probabilities_percent; i++)
+    for (int i = 0; i < num_values; i++)
     {
         int interval = 0;
         for (int j = 0; j <= i; j++)
@@ -67,7 +67,7 @@ void controller_run()
     simulator_init(config.num_inputs, K);
     for (int i = 0; i < config.num_inputs; i++)
     {
-        if (pthread_create(tid[i], NULL, simulator_run, (void *) config.inputs[i]))
+        if (pthread_create(&tid[i], NULL, &simulator_run, (void *) config.inputs[i]))
         {
             perror("Error: pthread_create");
         }
@@ -81,6 +81,8 @@ void controller_run()
     }
 
     char msg[LOG_MESSAGE_LENGTH];
+
+    time_utils_print_timestamp("Upravljac zapoceo");
 
     // Upravljacka petlja
     while (config.simulation_running)
@@ -103,6 +105,8 @@ void controller_run()
                 time_utils_print_timestamp(msg);
 
                 input_set_response(config.inputs[i], response);
+
+                last_state[i] = input_state.state;
             }
         }
     }

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include "time_utils.h"
+#include "input.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
@@ -36,13 +37,15 @@ static int generate_state()
 
 static unsigned int generate_added_delay(unsigned int period, unsigned int K)
 {
-    return (rand() % (K - 1)) * period;
+    int rand_int = rand() % (K - 1);
+    return rand_int * period;
 }
 
 void simulator_init(int num_inputs, int K)
 {
     config.num_inputs = num_inputs;
     config.simulation_running = true;
+    config.K = K;
 
     total_stats.num_state_changes = 0;
     total_stats.average_response_time = 0;
@@ -51,10 +54,12 @@ void simulator_init(int num_inputs, int K)
     total_stats.sum_response_times = 0;
 }
 
-void simulator_run(input_t *input)
+void *simulator_run(void *input)
 {
     if (NULL != input)
     {
+        input_t *p_input = (input_t *) input;
+
         stats_t stats = {
             .num_state_changes = 0,
             .average_response_time = 0,
@@ -64,7 +69,7 @@ void simulator_run(input_t *input)
         };
 
         // Pricekaj prvu pojavu
-        time_utils_delay_for(input_get_first_occurence(input));
+        time_utils_delay_for(input_get_first_occurence(p_input));
 
         // Pamtiti zadnji odgovor kako bi se znalo je li dosao novi odgovor
         int last_response = 0;
@@ -76,36 +81,38 @@ void simulator_run(input_t *input)
             int new_state = generate_state();
 
             sprintf(msg, "Dretva %d: promjena stanja ulaza (nova vrijednost %d)",
-                    input_get_id(input), new_state);
+                    input_get_id(p_input), new_state);
             time_utils_print_timestamp(msg);
 
-            input_set_state(input, new_state);
+            input_set_state(p_input, new_state);
             stats.num_state_changes += 1;
 
-            input_response_t input_response = input_get_response(input);
+            input_response_t input_response = input_get_response(p_input);
             while (input_response.response == last_response)
             {
                 // Odgovor jos nije stigao
                 time_utils_delay_for(SHORT_SLEEP_INTERVAL_MS);
-                input_response = input_get_response(input);
+                input_response = input_get_response(p_input);
             }
 
             // Odgovor je stigao
+            last_response = input_response.response;
+
             // Izracunaj vrijeme od promjene stanja do odgovora
-            unsigned long state_change_timestamp_ms = input_get_state(input).timestamp;
-            unsigned long response_timestamp_ms = input_get_response(input).timestamp;
+            unsigned long state_change_timestamp_ms = input_get_state(p_input).timestamp;
+            unsigned long response_timestamp_ms = input_get_response(p_input).timestamp;
             unsigned long response_time_ms = response_timestamp_ms - state_change_timestamp_ms;
 
-            sprintf(msg, "Dretva %d: odgovoreno, %d od promjene", 
-                    input_get_id(input), response_time_ms);
+            sprintf(msg, "Dretva %d: odgovoreno, %lu od promjene", 
+                    input_get_id(p_input), response_time_ms);
             time_utils_print_timestamp(msg);
 
             // Azuriraj statistiku
-            if (response_time_ms > input_get_period(input))
+            if (response_time_ms > input_get_period(p_input))
             {
                 stats.num_problems += 1;
 
-                sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(input));
+                sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(p_input));
                 time_utils_print_timestamp(msg);
             }
 
@@ -117,15 +124,15 @@ void simulator_run(input_t *input)
             }
 
             // Izracunaj vrijeme odgode
-            unsigned long delay_until_ms = input_get_state(input).timestamp + input_get_period(input);
-
+            unsigned long delay_until_ms = input_get_state(p_input).timestamp + input_get_period(p_input);
+            
             // Ako nije bilo kasnjenja, dodaj dodatnu odgodu
-            if (response_time_ms < input_get_period(input))
+            if (response_time_ms < input_get_period(p_input))
             {
-                delay_until_ms += generate_added_delay(input_get_period(input), config.K);
+                delay_until_ms += generate_added_delay(input_get_period(p_input), config.K);
             }
 
-            sprintf(msg, "Dretva %d: spavam do %d", input_get_id(input), delay_until_ms);
+            sprintf(msg, "Dretva %d: spavam do %lu", input_get_id(p_input), delay_until_ms);
             time_utils_print_timestamp(msg);
 
             time_utils_delay_until(delay_until_ms);

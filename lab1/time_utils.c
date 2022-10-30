@@ -53,7 +53,8 @@ void time_utils_print_timestamp(const char *msg)
     clock_gettime(CLOCK, &t);
     timespec_sub(&t, &start_time);
     unsigned long ms = timespec_to_ms(&t);
-    printf("[%lu] %s", ms, msg);
+    printf("[%lu] %s\n", ms, msg);
+    pthread_mutex_unlock(&print_mutex);
 }
 
 unsigned long time_utils_get_time_ms()
