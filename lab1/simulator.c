@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <math.h>
 
 #define SHORT_SLEEP_INTERVAL_MS (5U)
 #define STATE_MIN (100U)
@@ -26,8 +27,15 @@ static int generate_state()
 
 static unsigned int generate_added_delay(unsigned int period, unsigned int K)
 {
-    int rand_int = rand() % (K - 1);
-    return rand_int * period;
+    if (K <= 1)
+    {
+        return 0;
+    }
+    else
+    {
+        double rand_num = ((double) rand() / RAND_MAX) * (K - 1);
+        return round(rand_num * period);
+    }
 }
 
 void simulator_init(int num_inputs, int K)

@@ -8,3 +8,4 @@ add_executable(lab1
             controller.c
             simulator.c
             )
+target_link_libraries(lab1 PRIVATE m)
