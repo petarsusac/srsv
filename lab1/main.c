@@ -75,6 +75,7 @@ int main()
     };
     int num_inputs = 15;
 
+    time_utils_init();
     controller_init(inputs, num_inputs);
 
     controller_run();

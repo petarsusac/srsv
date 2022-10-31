@@ -57,8 +57,6 @@ void controller_init(input_t **inputs, int num_inputs)
     config.num_inputs = num_inputs;
     config.simulation_running = true;
 
-    time_utils_init();
-
     srand(time(NULL));
 }
 
