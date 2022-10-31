@@ -68,5 +68,10 @@ int main()
 
     print_stats(inputs, num_inputs);
 
+    for (int i = 0; i < num_inputs; i++)
+    {
+        input_delete(inputs[i]);
+    }
+
     return 0;
 }

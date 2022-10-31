@@ -42,6 +42,14 @@ input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occu
     return p_input;
 }
 
+void *input_delete(input_t *this)
+{
+    if (NULL != this)
+    {
+        free((void *) this);
+    }
+}
+
 void input_set_state(input_t *this, int state)
 {
     if (NULL != this)
