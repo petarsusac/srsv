@@ -62,56 +62,59 @@ void *simulator_run(void *input)
             stats->num_state_changes += 1;
 
             input_response_t input_response = input_get_response(p_input);
-            while (!input_response.response_set)
+            while (!input_response.response_set && config.simulation_running)
             {
                 // Odgovor jos nije stigao
                 time_utils_delay_for(SHORT_SLEEP_INTERVAL_MS);
                 input_response = input_get_response(p_input);
             }
 
-            // Signaliziraj da je odgovor procitan (ocisti zastavicu response_set)
-            input_response_read(p_input);
-
-            // Izracunaj vrijeme od promjene stanja do odgovora
-            unsigned long state_change_timestamp_ms = input_get_state(p_input).timestamp;
-            unsigned long response_timestamp_ms = input_get_response(p_input).timestamp;
-            unsigned long response_time_ms = response_timestamp_ms - state_change_timestamp_ms;
-
-            sprintf(msg, "Dretva %d: odgovoreno, %lu od promjene", 
-                    input_get_id(p_input), response_time_ms);
-            time_utils_print_timestamp(msg);
-
-            // Azuriraj statistiku
-            if (response_time_ms > input_get_period(p_input))
+            // Preskociti ostatak ako je simulacija u meduvremenu prekinuta
+            if (config.simulation_running)
             {
-                stats->num_problems += 1;
+                // Signaliziraj da je odgovor procitan (ocisti zastavicu response_set)
+                input_response_read(p_input);
 
-                sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(p_input));
+                // Izracunaj vrijeme od promjene stanja do odgovora
+                unsigned long state_change_timestamp_ms = input_get_state(p_input).timestamp;
+                unsigned long response_timestamp_ms = input_get_response(p_input).timestamp;
+                unsigned long response_time_ms = response_timestamp_ms - state_change_timestamp_ms;
+
+                sprintf(msg, "Dretva %d: odgovoreno, %lu od promjene", input_get_id(p_input), response_time_ms);
                 time_utils_print_timestamp(msg);
+
+                // Azuriraj statistiku
+                if (response_time_ms > input_get_period(p_input))
+                {
+                    stats->num_problems += 1;
+
+                    sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(p_input));
+                    time_utils_print_timestamp(msg);
+                }
+
+                stats->sum_response_times += response_time_ms;
+
+                if (response_time_ms > stats->max_response_time)
+                {
+                    stats->max_response_time = response_time_ms;
+                }
+
+                stats->average_response_time = (double) stats->sum_response_times / stats->num_state_changes;
+
+                // Izracunaj vrijeme odgode
+                unsigned long delay_until_ms = input_get_state(p_input).timestamp + input_get_period(p_input);
+                
+                // Ako nije bilo kasnjenja, dodaj dodatnu odgodu
+                if (response_time_ms < input_get_period(p_input))
+                {
+                    delay_until_ms += generate_added_delay(input_get_period(p_input), config.K);
+                }
+
+                sprintf(msg, "Dretva %d: spavam do %lu", input_get_id(p_input), delay_until_ms);
+                time_utils_print_timestamp(msg);
+
+                time_utils_delay_until(delay_until_ms);
             }
-
-            stats->sum_response_times += response_time_ms;
-
-            if (response_time_ms > stats->max_response_time)
-            {
-                stats->max_response_time = response_time_ms;
-            }
-
-            stats->average_response_time = (double) stats->sum_response_times / stats->num_state_changes;
-
-            // Izracunaj vrijeme odgode
-            unsigned long delay_until_ms = input_get_state(p_input).timestamp + input_get_period(p_input);
-            
-            // Ako nije bilo kasnjenja, dodaj dodatnu odgodu
-            if (response_time_ms < input_get_period(p_input))
-            {
-                delay_until_ms += generate_added_delay(input_get_period(p_input), config.K);
-            }
-
-            sprintf(msg, "Dretva %d: spavam do %lu", input_get_id(p_input), delay_until_ms);
-            time_utils_print_timestamp(msg);
-
-            time_utils_delay_until(delay_until_ms);
         }
     }
 }
