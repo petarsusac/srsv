@@ -13,6 +13,7 @@ struct _input_t
     // dinamicka svojstva (dretve ih mogu mijenjati)
     input_state_t input_state;
     input_response_t input_response;
+    input_stats_t stats;
 };
 
 input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occurence)
@@ -30,6 +31,12 @@ input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occu
 
         p_input->input_response.response = 0;
         p_input->input_response.timestamp = 0;
+
+        p_input->stats.average_response_time = 0.0;
+        p_input->stats.max_response_time = 0;
+        p_input->stats.num_problems = 0;
+        p_input->stats.num_state_changes = 0;
+        p_input->stats.sum_response_times = 0;
     }
 
     return p_input;
@@ -91,4 +98,14 @@ unsigned int input_get_id(input_t *this)
     }
 
     return 0;
+}
+
+input_stats_t *input_get_stats(input_t *this)
+{
+    if (NULL != this)
+    {
+        return &this->stats;
+    }
+
+    return NULL;
 }

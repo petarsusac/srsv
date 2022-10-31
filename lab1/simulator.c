@@ -6,25 +6,11 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 #define SHORT_SLEEP_INTERVAL_MS (5U)
 #define STATE_MIN (100U)
 #define STATE_MAX (999U)
 #define LOG_MESSAGE_LENGTH (100U)
-
-typedef struct _stats_t
-{
-    unsigned int num_state_changes;
-    double average_response_time;
-    unsigned int max_response_time;
-    unsigned int num_problems;
-    unsigned int sum_response_times;
-} stats_t;
-
-static stats_t total_stats;
-
-static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static struct _config
 {
@@ -49,12 +35,6 @@ void simulator_init(int num_inputs, int K)
     config.num_inputs = num_inputs;
     config.simulation_running = true;
     config.K = K;
-
-    total_stats.num_state_changes = 0;
-    total_stats.average_response_time = 0;
-    total_stats.max_response_time = 0;
-    total_stats.num_problems = 0;
-    total_stats.sum_response_times = 0;
 }
 
 void *simulator_run(void *input)
@@ -63,13 +43,7 @@ void *simulator_run(void *input)
     {
         input_t *p_input = (input_t *) input;
 
-        stats_t stats = {
-            .num_state_changes = 0,
-            .average_response_time = 0,
-            .max_response_time = 0,
-            .num_problems = 0,
-            .sum_response_times = 0,
-        };
+        input_stats_t *stats = input_get_stats(p_input);
 
         // Pricekaj prvu pojavu
         time_utils_delay_for(input_get_first_occurence(p_input));
@@ -88,7 +62,7 @@ void *simulator_run(void *input)
             time_utils_print_timestamp(msg);
 
             input_set_state(p_input, new_state);
-            stats.num_state_changes += 1;
+            stats->num_state_changes += 1;
 
             input_response_t input_response = input_get_response(p_input);
             while (input_response.response == last_response)
@@ -113,20 +87,20 @@ void *simulator_run(void *input)
             // Azuriraj statistiku
             if (response_time_ms > input_get_period(p_input))
             {
-                stats.num_problems += 1;
+                stats->num_problems += 1;
 
                 sprintf(msg, "Dretva %d: odgovor kasni, azuriram statistiku", input_get_id(p_input));
                 time_utils_print_timestamp(msg);
             }
 
-            stats.sum_response_times += response_time_ms;
+            stats->sum_response_times += response_time_ms;
 
-            if (response_time_ms > stats.max_response_time)
+            if (response_time_ms > stats->max_response_time)
             {
-                stats.max_response_time = response_time_ms;
+                stats->max_response_time = response_time_ms;
             }
 
-            stats.average_response_time = (double) stats.sum_response_times / stats.num_state_changes;
+            stats->average_response_time = (double) stats->sum_response_times / stats->num_state_changes;
 
             // Izracunaj vrijeme odgode
             unsigned long delay_until_ms = input_get_state(p_input).timestamp + input_get_period(p_input);
@@ -142,15 +116,6 @@ void *simulator_run(void *input)
 
             time_utils_delay_until(delay_until_ms);
         }
-
-        // Ispis statistike
-        pthread_mutex_lock(&print_mutex);
-        printf("\n----------- STATISTIKA ULAZ %d -----------\n", input_get_id(input));
-        printf("Broj promjena stanja ulaza: %d\n", stats.num_state_changes);
-        printf("Prosjecno vrijeme odgovora: %.2lf ms\n", stats.average_response_time);
-        printf("Maksimalno vrijeme odgovora: %d ms\n", stats.max_response_time);
-        printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", stats.num_problems, ((double) stats.num_problems / stats.num_state_changes) * 100);
-        pthread_mutex_unlock(&print_mutex);
     }
 }
 
