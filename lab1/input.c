@@ -31,6 +31,7 @@ input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occu
 
         p_input->input_response.response = 0;
         p_input->input_response.timestamp = 0;
+        p_input->input_response.response_set = false;
 
         p_input->stats.average_response_time = 0.0;
         p_input->stats.max_response_time = 0;
@@ -70,6 +71,15 @@ void input_set_response(input_t *this, int response)
     {
         this->input_response.response = response;
         this->input_response.timestamp = time_utils_get_time_ms();
+        this->input_response.response_set = true;
+    }
+}
+
+void input_response_read(input_t *this)
+{
+    if (NULL != this)
+    {
+        this->input_response.response_set = false;
     }
 }
 

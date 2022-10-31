@@ -48,9 +48,6 @@ void *simulator_run(void *input)
         // Pricekaj prvu pojavu
         time_utils_delay_for(input_get_first_occurence(p_input));
 
-        // Pamtiti zadnji odgovor kako bi se znalo je li dosao novi odgovor
-        int last_response = 0;
-
         char msg[LOG_MESSAGE_LENGTH];
         
         while(config.simulation_running)
@@ -65,15 +62,15 @@ void *simulator_run(void *input)
             stats->num_state_changes += 1;
 
             input_response_t input_response = input_get_response(p_input);
-            while (input_response.response == last_response)
+            while (!input_response.response_set)
             {
                 // Odgovor jos nije stigao
                 time_utils_delay_for(SHORT_SLEEP_INTERVAL_MS);
                 input_response = input_get_response(p_input);
             }
 
-            // Odgovor je stigao
-            last_response = input_response.response;
+            // Signaliziraj da je odgovor procitan (ocisti zastavicu response_set)
+            input_response_read(p_input);
 
             // Izracunaj vrijeme od promjene stanja do odgovora
             unsigned long state_change_timestamp_ms = input_get_state(p_input).timestamp;
