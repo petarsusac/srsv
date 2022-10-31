@@ -8,7 +8,6 @@
 #include "simulator.h"
 #include "time_utils.h"
 
-#define K (2U)
 #define LOG_MESSAGE_LENGTH (100U)
 
 static struct _config
@@ -61,7 +60,7 @@ void controller_init(input_t **inputs, int num_inputs)
     srand(time(NULL));
 }
 
-void controller_run()
+void controller_run(unsigned int K)
 {
     // Stvori dretve koje postavljaju ulaze
     pthread_t tid[config.num_inputs];

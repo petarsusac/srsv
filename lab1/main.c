@@ -1,8 +1,29 @@
 #include <signal.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "controller.h"
 #include "time_utils.h"
+
+#define K_MIN (1U)
+#define K_MAX (5U)
+
+static int read_param(int argc, char **argv)
+{
+    if (argc != 2)
+    {
+        return 0;
+    }
+
+    int k = atoi(argv[1]);
+
+    if (k < K_MIN || k > K_MAX)
+    {
+        return 0;
+    }
+
+    return k;
+}
 
 static void sigint_handler(int signum)
 {
@@ -53,8 +74,16 @@ static void print_stats(input_t **inputs, int num_inputs)
     printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", total_stats.num_problems, ((double) total_stats.num_problems / total_stats.num_state_changes) * 100);
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    int K = read_param(argc, argv);
+
+    if (0 == K)
+    {
+        printf("Neispravan parametar K. Mora biti cijeli broj od 1 do 5.\n");
+        return 0;
+    }
+
     signal(SIGINT, sigint_handler);
 
     input_t *inputs[] = {
@@ -85,7 +114,7 @@ int main()
     time_utils_init();
     controller_init(inputs, num_inputs);
 
-    controller_run();
+    controller_run(K);
 
     print_stats(inputs, num_inputs);
 
