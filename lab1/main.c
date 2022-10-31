@@ -57,23 +57,28 @@ int main()
 
     input_t *inputs[] = {
         // id, period, prva pojava
-        input_new(1, 1000, 1000),
-        input_new(2, 1000, 1500),
-        input_new(3, 1000, 2000),
-        input_new(4, 1000, 2500),
-        input_new(5, 1000, 3000),
-        input_new(6, 2000, 5000),
-        input_new(7, 2000, 5500),
-        input_new(8, 2000, 5500),
-        input_new(9, 2000, 6000),
-        input_new(10, 5000, 1000),
-        input_new(11, 5000, 5100),
-        input_new(12, 5000, 7000),
-        input_new(13, 5000, 7500),
-        input_new(14, 10000, 100),
-        input_new(15, 20000, 500),
+        input_new(1, 500, 100),
+        input_new(2, 500, 200),
+        input_new(3, 500, 300),
+        input_new(4, 500, 400),
+        input_new(5, 500, 500),
+        input_new(6, 500, 600),
+        input_new(7, 500, 700),
+        input_new(8, 1000, 800),
+        input_new(9, 1000, 900),
+        input_new(10, 1000, 1000),
+        input_new(11, 1000, 1100),
+        input_new(12, 1000, 1200),
+        input_new(13, 1000, 1300),
+        input_new(14, 2000, 1400),
+        input_new(15, 2000, 1500),
+        input_new(16, 2000, 1600),
+        input_new(17, 2000, 1700),
+        input_new(18, 5000, 1800),
+        input_new(19, 5000, 1900),
+        input_new(20, 5000, 2000),
     };
-    int num_inputs = 15;
+    int num_inputs = 20;
 
     time_utils_init();
     controller_init(inputs, num_inputs);
