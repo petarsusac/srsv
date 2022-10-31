@@ -6,6 +6,7 @@
 static void sigint_handler(int signum)
 {
     controller_stop();
+    time_utils_print_timestamp("Simulacija je zaustavljena, cekam da sve dretve zavrse");
 }
 
 static void print_stats(input_t **inputs, int num_inputs)
