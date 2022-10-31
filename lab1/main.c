@@ -1,7 +1,8 @@
-#include "controller.h"
-#include "time_utils.h"
 #include <signal.h>
 #include <stdio.h>
+
+#include "controller.h"
+#include "time_utils.h"
 
 static void sigint_handler(int signum)
 {

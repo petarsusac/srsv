@@ -1,6 +1,7 @@
 #include "input.h"
 
 #include <stdlib.h>
+
 #include "time_utils.h"
 
 struct _input_t 

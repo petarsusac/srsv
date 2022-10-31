@@ -1,12 +1,13 @@
 #include "simulator.h"
 
 #include <stdbool.h>
-#include "time_utils.h"
-#include "input.h"
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
 #include <math.h>
+
+#include "input.h"
+#include "time_utils.h"
 
 #define SHORT_SLEEP_INTERVAL_MS (5U)
 #define STATE_MIN (100U)
