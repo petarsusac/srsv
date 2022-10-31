@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #define SHORT_SLEEP_INTERVAL_MS (5U)
 #define STATE_MIN (100U)
@@ -22,6 +23,8 @@ typedef struct _stats_t
 } stats_t;
 
 static stats_t total_stats;
+
+static pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static struct _config
 {
@@ -123,6 +126,8 @@ void *simulator_run(void *input)
                 stats.max_response_time = response_time_ms;
             }
 
+            stats.average_response_time = (double) stats.sum_response_times / stats.num_state_changes;
+
             // Izracunaj vrijeme odgode
             unsigned long delay_until_ms = input_get_state(p_input).timestamp + input_get_period(p_input);
             
@@ -137,6 +142,15 @@ void *simulator_run(void *input)
 
             time_utils_delay_until(delay_until_ms);
         }
+
+        // Ispis statistike
+        pthread_mutex_lock(&print_mutex);
+        printf("\n----------- STATISTIKA ULAZ %d -----------\n", input_get_id(input));
+        printf("Broj promjena stanja ulaza: %d\n", stats.num_state_changes);
+        printf("Prosjecno vrijeme odgovora: %.2lf ms\n", stats.average_response_time);
+        printf("Maksimalno vrijeme odgovora: %d ms\n", stats.max_response_time);
+        printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", stats.num_problems, ((double) stats.num_problems / stats.num_state_changes) * 100);
+        pthread_mutex_unlock(&print_mutex);
     }
 }
 
