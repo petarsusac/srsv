@@ -7,10 +7,16 @@
 
 #define K_MIN (1U)
 #define K_MAX (5U)
+#define K_DEFAULT (2U)
 
 static int read_param(int argc, char **argv)
 {
-    if (argc != 2)
+    if (1 == argc)
+    {
+        printf("K nije definiran, pretpostavljam K=%d", K_DEFAULT);
+        return K_DEFAULT;
+    }
+    else if (2 != argc)
     {
         return 0;
     }

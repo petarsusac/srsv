@@ -14,6 +14,8 @@ Izvršna datoteka naziva je lab1, a smještena je u direktorij build. Program se
 
 $ build/lab1 2
 
+Ako se ne zada parametar K, program će se pokrenuti s pretpostavljenom vrijednosti K (K=2).
+
 Program će se izvršavati i ispisivati status izvođenja sve dok se ne prekine signalom SIGINT, odnosno pritiskom kombinacije tipki Ctrl+C na tipkovnici. Nakon što je poslan signal za prekid simulacije, potrebno je pričekati još nekoliko sekundi dok ne završe sve pokrenute dretve koje eventualno spavaju u trenutku prekida. Tada se ispisuje statistika (za svaki ulaz i na kraju ukupna) i program završava s izvođenjem.
 
 
