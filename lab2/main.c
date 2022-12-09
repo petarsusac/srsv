@@ -1,24 +1,21 @@
 #include <stdio.h>
-#include <signal.h>
-#include "periodic_signal.h"
 
-#define INTERRUPT_PERIOD_MS 1000
-
-static void signal_handler(int signum)
-{
-    printf("SIGINT\n");
-}
-
-static void create_periodic_interrupt(void (*interrupt_cb)(int))
-{
-    signal(SIGINT, interrupt_cb);
-    periodic_signal_create(SIGINT, INTERRUPT_PERIOD_MS);
-}
+#include "time_utils.h"
+#include "controller.h"
 
 int main(void)
 {
-    time_utils_init();
-    create_periodic_interrupt(signal_handler);  
 
-    while(1);
+    input_t *inputs = {
+        // id, period, prva pojava
+        input_new(1, 500, 0),
+        input_new(2, 1000, 100),
+    };
+
+    time_utils_init();
+    controller_init(&inputs, 2);  
+
+    controller_start();
+
+    return 0;
 }
