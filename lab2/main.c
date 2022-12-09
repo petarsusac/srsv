@@ -17,7 +17,8 @@ static void create_periodic_interrupt(void (*interrupt_cb)(int))
 
 int main(void)
 {
-    create_periodic_interrupt(signal_handler);    
+    time_utils_init();
+    create_periodic_interrupt(signal_handler);  
 
     while(1);
 }
