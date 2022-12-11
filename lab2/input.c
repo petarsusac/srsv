@@ -39,6 +39,8 @@ input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occu
         p_input->stats.num_problems = 0;
         p_input->stats.num_state_changes = 0;
         p_input->stats.sum_response_times = 0;
+        p_input->stats.two_periods_used_counter = 0;
+        p_input->stats.not_finished_counter = 0;
     }
 
     return p_input;

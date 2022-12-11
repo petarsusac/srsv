@@ -5,5 +5,8 @@ add_executable(lab2
             main.c 
             time_utils.c
             periodic_signal.c
+            controller.c
+            input.c
+            simulator.c
             )
 target_link_libraries(lab2 PRIVATE m)

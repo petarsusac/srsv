@@ -13,7 +13,7 @@
 
 #define LOG_MESSAGE_LENGTH (100U)
 #define K (1U)
-#define INTERRUPT_PERIOD_MS (1000U)
+#define INTERRUPT_PERIOD_MS (100U)
 #define SHORT_PROCESSING_DELAY_MS (5U)
 
 static struct _config
@@ -35,6 +35,19 @@ static int generate_response(int state)
 {
     // Vrati samo kopiju stanja (zasad)
     return state;
+}
+
+static input_t *get_input_by_id(int id)
+{
+    for (int i = 0; i < config.num_inputs; i++)
+    {
+        if (input_get_id(config.inputs[i]) == id)
+        {
+            return config.inputs[i];
+        }
+    }
+
+    return NULL;
 }
 
 static int calculate_processing_time()
@@ -70,6 +83,20 @@ static void create_periodic_interrupt(void (*interrupt_cb)(int))
     periodic_signal_create(SIGINT, INTERRUPT_PERIOD_MS);
 }
 
+static int choose_task_to_process()
+{
+    for (int i = 0; i < config.num_inputs; i++)
+    {
+        input_t *input = config.inputs[i];
+        if (input_get_state(input).timestamp >= input_get_response(input).timestamp)
+        {
+            return input_get_id(input);
+        }
+    }
+
+    return 0;
+}
+
 // GLAVNA FUNKCIJA ZA OBRADU
 // Poziva se na periodicki prekid (odnosno signal koji generira timer)
 static void process_task(int signum)
@@ -78,6 +105,10 @@ static void process_task(int signum)
 
     time_utils_print_timestamp("Periodicki prekid zapoceo");
 
+    input_stats_t *stats = input_get_stats(get_input_by_id(state.current_task));
+
+    char msg[100];
+
     if (0 != state.current_task)
     {
         // Neki zadatak je u obradi. Provjeri hocemo li mu dopustiti
@@ -85,7 +116,12 @@ static void process_task(int signum)
 
         if (1 == state.current_period && state.periods_without_overflow <= 10)
         {
-            // TODO: zabiljezi da je dopustena druga perioda
+            // Zabiljezi da je dopustena druga perioda
+            stats->two_periods_used_counter++;
+
+            sprintf(msg, "Zadatku %d je dopustena druga perioda", state.current_task);
+            time_utils_print_timestamp(msg);
+
             state.current_period = 2;
             state.periods_without_overflow = 0;
             return;
@@ -93,7 +129,9 @@ static void process_task(int signum)
         else
         {
             // Prekini trenutni zadatak i zapocni obradu novog kodom ispod
-            // TODO: Zabiljezi da je zadatak prekinut
+            // Zabiljezi da je zadatak prekinut
+            sprintf(msg, "Zadatak %d je prekinut", state.current_task);
+            time_utils_print_timestamp(msg);
         }
     }
 
@@ -101,19 +139,34 @@ static void process_task(int signum)
     int my_task = 0;
     int my_job = 0;
     int processing_time = 0;
-    bool take_next = false;
+    bool take_next = true;
 
     while (true == take_next)
     {
         take_next = false;
 
-        state.current_task = choose_task_to_process(); // TODO: napisati ovu funkciju
+        // Problem: ako se prekine neki zadatak, moguce je da se taj zadatak opet odabere za izvođenje
+        // Napraviti da se ne može odabrati upravo prekinuti zadatak
+        state.current_task = choose_task_to_process();
+
+        if (0 == state.current_task)
+        {
+            // Nema zadataka koji cekaju obradu
+            time_utils_print_timestamp("Nema zadataka koji cekaju na obradu. Vrtim prazan zadatak ovaj period.");
+            return;
+        }
+
         state.current_job = time_utils_get_time_ms(); // neki nasumicni broj, npr. vrijeme
         my_task = state.current_task;
         my_job = state.current_job;
 
         state.current_period = 1;
-        // TODO: zabiljezi pocetak obrade
+
+        // Zabiljezi pocetak obrade
+        unsigned long processing_start = time_utils_get_time_ms();
+
+        sprintf(msg, "Zapoceta obrada zadatka %d", my_task);
+        time_utils_print_timestamp(msg);
 
         processing_time = calculate_processing_time();
 
@@ -131,7 +184,14 @@ static void process_task(int signum)
         if (my_job == state.current_job && processing_time <= 0)
         {
             // Obrada je zavrsena
-            // TODO: zabiljezi kraj obrade
+            // Zabiljezi kraj obrade
+            unsigned long processing_end = time_utils_get_time_ms();
+            sprintf(msg, "Obrada zadatka %d zavrsena je u regularnom vremenu, trajanje: %lu ms", my_task, processing_end - processing_start);
+            time_utils_print_timestamp(msg);
+
+            // Upisi odgovor za dretvu simulator
+            input_set_response(get_input_by_id(my_task), generate_response(input_get_state(get_input_by_id(my_task)).state));
+
             state.current_task = 0;
             state.current_job = 0;
             if (1 == state.current_period)
@@ -148,6 +208,8 @@ static void process_task(int signum)
         else
         {
             // Zadatak je prekinut, izadi iz funkcije
+            // Prije izlaska zapisi neki odgovor tako da dretva simulator ne ceka
+            input_set_response(get_input_by_id(my_task), generate_response(input_get_state(get_input_by_id(my_task)).state));
         }
     }
 

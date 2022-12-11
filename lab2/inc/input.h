@@ -24,6 +24,8 @@ typedef struct _input_stats_t
     unsigned int max_response_time;
     unsigned int num_problems;
     unsigned int sum_response_times;
+    unsigned int two_periods_used_counter;
+    unsigned int not_finished_counter;
 } input_stats_t;
 
 input_t *input_new(unsigned int id, unsigned int period, unsigned int first_occurence);
