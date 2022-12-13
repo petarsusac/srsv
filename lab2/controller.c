@@ -22,7 +22,7 @@ static struct _config
     int num_inputs;
     int num_input_types;
     int *num_inputs_by_type;
-    bool simulation_running;
+    volatile bool simulation_running;
 } config;
 
 static struct _state
@@ -32,6 +32,63 @@ static struct _state
     volatile int current_period;
     volatile int periods_without_overflow;
 } state;
+
+static void print_stats(input_t **inputs, int num_inputs)
+{
+    input_stats_t total_stats = {
+        .average_response_time = 0.0,
+        .max_response_time = 0,
+        .num_problems = 0,
+        .num_state_changes = 0,
+        .sum_response_times = 0,
+        .not_finished_counter = 0,
+        .two_periods_used_counter = 0,
+    };
+    
+    for (int i = 0; i < num_inputs; i++)
+    {
+        if (NULL == inputs[i])
+        {
+            continue;
+        }
+        
+        printf("\n----------- STATISTIKA ULAZ %d -----------\n", input_get_id(inputs[i]));
+
+        // Ispis pojedinacne statistike za ulaz
+        input_stats_t *stats = input_get_stats(inputs[i]);
+
+        printf("Broj promjena stanja ulaza: %d\n", stats->num_state_changes);
+        printf("Prosjecno vrijeme odgovora: %.2lf ms\n", stats->average_response_time);
+        printf("Maksimalno vrijeme odgovora: %d ms\n", stats->max_response_time);
+        printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", stats->num_problems, ((double) stats->num_problems / stats->num_state_changes) * 100);
+        printf("Koliko je puta dozvoljena druga perioda zadatku: %d\n", stats->two_periods_used_counter);
+        printf("Koliko puta je zadatak prekinut: %d\n", stats->not_finished_counter);
+
+        // Dodavanje pojedinacne statistike ukupnoj statistici
+        total_stats.num_state_changes += stats->num_state_changes;
+        total_stats.sum_response_times += stats->sum_response_times;
+        total_stats.num_problems += stats->num_problems;
+
+        if (stats->max_response_time > total_stats.max_response_time)
+        {
+            total_stats.max_response_time = stats->max_response_time;
+        }
+
+        total_stats.not_finished_counter += stats->not_finished_counter;
+        total_stats.two_periods_used_counter += stats->two_periods_used_counter;
+    }
+
+    // Ispis ukupne statistike
+    total_stats.average_response_time = (double) total_stats.sum_response_times / total_stats.num_state_changes;
+
+    printf("\n----------- UKUPNA STATISTIKA -----------\n");
+    printf("Broj promjena stanja ulaza: %d\n", total_stats.num_state_changes);
+    printf("Prosjecno vrijeme odgovora: %.2lf ms\n", total_stats.average_response_time);
+    printf("Maksimalno vrijeme odgovora: %d ms\n", total_stats.max_response_time);
+    printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", total_stats.num_problems, ((double) total_stats.num_problems / total_stats.num_state_changes) * 100);
+    printf("Koliko je puta dozvoljena druga perioda zadacima: %d\n", total_stats.two_periods_used_counter);
+    printf("Koliko puta su zadaci prekinuti: %d\n", total_stats.not_finished_counter);
+}
 
 static int generate_response(int state)
 {
@@ -85,8 +142,8 @@ static int calculate_processing_time()
 
 static void create_periodic_interrupt(void (*interrupt_cb)(int))
 {
-    signal(SIGINT, interrupt_cb);
-    periodic_signal_create(SIGINT, INTERRUPT_PERIOD_MS);
+    signal(SIGALRM, interrupt_cb);
+    periodic_signal_create(SIGALRM, INTERRUPT_PERIOD_MS);
 }
 
 static int choose_task_to_process()
@@ -294,8 +351,14 @@ void controller_start()
     // Cekaj kraj simulacije
     while (config.simulation_running) ;
 
+    // Onemoguci periodicki signal
+    periodic_signal_disable();
+
     // Zaustavi dretve simulatore
     simulator_stop_all();
+
+    print_stats(config.inputs, config.num_inputs);
+
     for (int i = 0; i < config.num_inputs; i++)
     {
         pthread_join(tid[i], NULL);

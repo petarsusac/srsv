@@ -2,5 +2,6 @@
 #define _PERIODIC_SIGNAL_H_
 
 void periodic_signal_create(int signum, unsigned long period_ms);
+void periodic_signal_disable();
 
 #endif

@@ -1,10 +1,21 @@
 #include <stdio.h>
+#include <signal.h>
 
 #include "time_utils.h"
 #include "controller.h"
 
+static void sigint_handler(int signum)
+{
+    controller_stop();
+    time_utils_print_timestamp("Simulacija je zaustavljena, cekam da sve dretve zavrse");
+}
+
+
 int main(void)
 {
+    // Signal za prekidanje simulacije (i ispis statistike po prekidu)
+    signal(SIGINT, sigint_handler);
+
     // 3 zadatka tipa A (T=1s), 10 zadataka tipa B (T=5s) i 7 zadataka tipa C (T=10s)
     // Podjela 1 sekunde na intervale od 100 ms 
     // A se mora obraditi 3 puta u 1 s, B 2 puta i C jednom s tim da ce se izvoditi prazan C u 3 od 10 s
@@ -50,6 +61,11 @@ int main(void)
     controller_init(tasks, 23, 3, num_tasks_by_type);
 
     controller_start();
+
+    for (int i = 0; i < 23; i++)
+    {
+        input_delete(tasks[i]);
+    }
 
     return 0;
 }

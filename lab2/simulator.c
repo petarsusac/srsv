@@ -17,7 +17,7 @@
 static struct _config
 {
     int num_inputs;
-    bool simulation_running;
+    volatile bool simulation_running;
     unsigned int K; // konstanta koja odreduje koliko cesto dolaze promjene stanja
 } config;
 
