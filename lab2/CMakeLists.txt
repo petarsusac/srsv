@@ -8,5 +8,7 @@ add_executable(lab2
             controller.c
             input.c
             simulator.c
+            stats.c
+            scheduling.c
             )
 target_link_libraries(lab2 PRIVATE m)

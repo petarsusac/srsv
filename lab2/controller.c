@@ -10,6 +10,8 @@
 #include "call.h"
 #include "time_utils.h"
 #include "simulator.h"
+#include "stats.h"
+#include "scheduling.h"
 
 #define LOG_MESSAGE_LENGTH (100U)
 #define K (1U)
@@ -32,63 +34,6 @@ static struct _state
     volatile int current_period;
     volatile int periods_without_overflow;
 } state;
-
-static void print_stats(input_t **inputs, int num_inputs)
-{
-    input_stats_t total_stats = {
-        .average_response_time = 0.0,
-        .max_response_time = 0,
-        .num_problems = 0,
-        .num_state_changes = 0,
-        .sum_response_times = 0,
-        .not_finished_counter = 0,
-        .two_periods_used_counter = 0,
-    };
-    
-    for (int i = 0; i < num_inputs; i++)
-    {
-        if (NULL == inputs[i])
-        {
-            continue;
-        }
-        
-        printf("\n----------- STATISTIKA ULAZ %d -----------\n", input_get_id(inputs[i]));
-
-        // Ispis pojedinacne statistike za ulaz
-        input_stats_t *stats = input_get_stats(inputs[i]);
-
-        printf("Broj promjena stanja ulaza: %d\n", stats->num_state_changes);
-        printf("Prosjecno vrijeme odgovora: %.2lf ms\n", stats->average_response_time);
-        printf("Maksimalno vrijeme odgovora: %d ms\n", stats->max_response_time);
-        printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", stats->num_problems, ((double) stats->num_problems / stats->num_state_changes) * 100);
-        printf("Koliko je puta dozvoljena druga perioda zadatku: %d\n", stats->two_periods_used_counter);
-        printf("Koliko puta je zadatak prekinut: %d\n", stats->not_finished_counter);
-
-        // Dodavanje pojedinacne statistike ukupnoj statistici
-        total_stats.num_state_changes += stats->num_state_changes;
-        total_stats.sum_response_times += stats->sum_response_times;
-        total_stats.num_problems += stats->num_problems;
-
-        if (stats->max_response_time > total_stats.max_response_time)
-        {
-            total_stats.max_response_time = stats->max_response_time;
-        }
-
-        total_stats.not_finished_counter += stats->not_finished_counter;
-        total_stats.two_periods_used_counter += stats->two_periods_used_counter;
-    }
-
-    // Ispis ukupne statistike
-    total_stats.average_response_time = (double) total_stats.sum_response_times / total_stats.num_state_changes;
-
-    printf("\n----------- UKUPNA STATISTIKA -----------\n");
-    printf("Broj promjena stanja ulaza: %d\n", total_stats.num_state_changes);
-    printf("Prosjecno vrijeme odgovora: %.2lf ms\n", total_stats.average_response_time);
-    printf("Maksimalno vrijeme odgovora: %d ms\n", total_stats.max_response_time);
-    printf("Broj zakasnjelih odgovora: %d (%.2lf%%)\n", total_stats.num_problems, ((double) total_stats.num_problems / total_stats.num_state_changes) * 100);
-    printf("Koliko je puta dozvoljena druga perioda zadacima: %d\n", total_stats.two_periods_used_counter);
-    printf("Koliko puta su zadaci prekinuti: %d\n", total_stats.not_finished_counter);
-}
 
 static int generate_response(int state)
 {
@@ -146,59 +91,6 @@ static void create_periodic_interrupt(void (*interrupt_cb)(int))
     periodic_signal_create(SIGALRM, INTERRUPT_PERIOD_MS);
 }
 
-static int choose_task_to_process()
-{
-    // Raspored:
-    // A B - A B - A C - -
-
-    // A = 0, B = 1, C = 2, nista = -1
-    int sequence[] = {0, 1, -1, 0, 1, -1, 0, 2, -1, -1};
-
-    // Indeks koji broji koji tip zadatka je na redu
-    static int type_index = 0;
-
-    // Indeksi koji broje koji konkretno zadatak svakog tipa je na redu
-    static int task_indexes[] = {0, 0, 0};
-
-    int task_to_process_id;
-    int task_type = sequence[type_index];
-    if (-1 != task_type)
-    {
-        int task_to_process_index;
-        if (0 == task_type)
-        {
-            task_to_process_index = task_indexes[task_type];
-        }
-        else if (1 == task_type)
-        {
-            task_to_process_index = config.num_inputs_by_type[0] + task_indexes[task_type];
-        }
-        else if (2 == task_type)
-        {
-            task_to_process_index = config.num_inputs_by_type[0] + config.num_inputs_by_type[1] + task_indexes[task_type];
-        }
-
-        if (config.inputs[task_to_process_index])
-        {
-            task_to_process_id = input_get_id(config.inputs[task_to_process_index]);
-        }
-        else
-        {
-            task_to_process_id = 0;
-        }
-
-        task_indexes[task_type] = (task_indexes[task_type] + 1) % config.num_inputs_by_type[task_type];
-    }
-    else
-    {
-        task_to_process_id = 0;
-    }
-
-    type_index = (type_index + 1) % 10; // TODO: izvuci ovaj 10 u neki define
-
-    return task_to_process_id;
-}
-
 // GLAVNA FUNKCIJA ZA OBRADU
 // Poziva se na periodicki prekid (odnosno signal koji generira timer)
 static void process_task(int signum)
@@ -247,7 +139,7 @@ static void process_task(int signum)
     {
         take_next = false;
 
-        state.current_task = choose_task_to_process();
+        state.current_task = scheduling_choose_task_to_process(config.inputs, config.num_inputs_by_type);
 
         if (0 == state.current_task)
         {
@@ -357,11 +249,11 @@ void controller_start()
     // Zaustavi dretve simulatore
     simulator_stop_all();
 
-    print_stats(config.inputs, config.num_inputs);
+    stats_print(config.inputs, config.num_inputs);
 
     for (int i = 0; i < config.num_inputs; i++)
     {
-        pthread_join(tid[i], NULL);
+        CALL(STOP, pthread_join, tid[i], NULL);
     }
 }
 
