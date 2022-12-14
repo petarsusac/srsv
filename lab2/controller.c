@@ -124,6 +124,7 @@ static void process_task(int signum)
         {
             // Prekini trenutni zadatak i zapocni obradu novog kodom ispod
             // Zabiljezi da je zadatak prekinut
+            stats->not_finished_counter++;
             sprintf(msg, "Upravljac: Zadatak %d je prekinut", state.current_task);
             time_utils_print_timestamp(msg);
         }
