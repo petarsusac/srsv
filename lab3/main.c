@@ -3,15 +3,23 @@
 #include <stdlib.h>
 
 #include "time_utils.h"
+#include "controller.h"
 
 
 int main(int argc, char **argv)
 {
-    time_utils_init();
 
-    time_utils_print_timestamp("Pocetak");
-    time_utils_simulate_ms(100);
-    time_utils_print_timestamp("Kraj");
+    input_t *inputs[] = {
+        // id, period, prva pojava
+        input_new(1, 1000, 500),
+        input_new(2, 2000, 1000),
+    };
+    int num_inputs = 2;
+
+    time_utils_init();
+    controller_init(inputs, num_inputs, 10000);
+
+    controller_run();
 
     return 0;
 }

@@ -82,6 +82,11 @@ void time_utils_init()
 {
     clock_gettime(CLOCK, &start_time);
     calc_num_iterations_10_ms_delay();
+    
+    // Ponovno postavi pocetno vrijeme jer je racunanje iteracija za
+    // kasnjenje 10 ms trajalo neko vrijeme, pa da ne bude pomaka
+    // na pocetku simulacije
+    clock_gettime(CLOCK, &start_time);
 }
 
 void time_utils_simulate_ms(int ms)
