@@ -96,7 +96,7 @@ void controller_run()
 {
     // Stvori dretve koje postavljaju ulaze
     pthread_t tid_sim[config.num_inputs];
-    simulator_init(config.num_inputs, 1); // K = 1
+    simulator_init(config.num_inputs, config.time_limit_ms);
     for (int i = 0; i < config.num_inputs; i++)
     {
         if (pthread_create(&tid_sim[i], NULL, &simulator_run, (void *) config.inputs[i]))

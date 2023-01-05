@@ -19,6 +19,7 @@ static struct _config
     int num_inputs;
     bool simulation_running;
     unsigned int K; // konstanta koja odreduje koliko cesto dolaze promjene stanja
+    unsigned time_limit_ms;
 } config;
 
 static int generate_state()
@@ -39,11 +40,12 @@ static unsigned int generate_added_delay(unsigned int period, unsigned int K)
     }
 }
 
-void simulator_init(int num_inputs, int K)
+void simulator_init(int num_inputs, unsigned time_limit_ms)
 {
     config.num_inputs = num_inputs;
     config.simulation_running = true;
-    config.K = K;
+    config.K = 1;
+    config.time_limit_ms = time_limit_ms;
 }
 
 void *simulator_run(void *input)
@@ -59,7 +61,7 @@ void *simulator_run(void *input)
 
         char msg[LOG_MESSAGE_LENGTH];
         
-        while(config.simulation_running)
+        while(config.simulation_running && time_utils_get_time_ms() < config.time_limit_ms)
         {
             int new_state = generate_state();
 
