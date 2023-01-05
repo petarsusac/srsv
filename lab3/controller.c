@@ -24,15 +24,15 @@ static int generate_response(int state)
     return state;
 }
 
-static int calc_input_processing_length()
+static unsigned calc_input_processing_length(unsigned period)
 {
     // Generiraj nasumican broj izmedu 0 i 100
     int rand_num = rand() % 100;
     
     // Distribucija vjerojatnosti razlicitih vremena obrade
     int num_values = 4;
-    int processing_times_ms[] = {30, 50, 80, 120};
-    int probabilities_percent[] = {20, 50, 20, 10};
+    unsigned processing_times_period_percent[] = {10, 20, 40, 70};
+    int probabilities_percent[] = {50, 30, 15, 5};
 
     // Izracunaj u koji od intervala je upala slucajna vrijednost
     for (int i = 0; i < num_values; i++)
@@ -45,7 +45,7 @@ static int calc_input_processing_length()
 
         if (rand_num < interval)
         {
-            return processing_times_ms[i];
+            return (processing_times_period_percent[i] / 100.) * period;
         }
     }
 }
@@ -65,7 +65,10 @@ static void *controller_thread(void *input)
     while(time_utils_get_time_ms() < config.time_limit_ms)
     {
         // Simuliraj obradu ulaza
-        time_utils_simulate_ms(calc_input_processing_length());
+        sprintf(msg, "Upravljac %d: zapoceta obrada", input_get_id(p_input));
+        time_utils_print_timestamp(msg);
+
+        time_utils_simulate_ms(calc_input_processing_length(input_get_period(p_input)));
 
         // Postavi odgovor
         input_set_response(p_input, generate_response(input_get_state(p_input).state));
