@@ -7,5 +7,6 @@ add_executable(lab3
             time_utils.c
             controller.c
             simulator.c
+            stats.c
             )
 target_link_libraries(lab3 PRIVATE m)

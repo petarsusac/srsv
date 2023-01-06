@@ -4,6 +4,7 @@
 
 #include "time_utils.h"
 #include "controller.h"
+#include "stats.h"
 
 #define LAB3RT true
 
@@ -22,6 +23,8 @@ int main(int argc, char **argv)
     controller_init(inputs, num_inputs, 10000);
 
     controller_run(LAB3RT);
+
+    print_stats(inputs, num_inputs);
 
     return 0;
 }
