@@ -64,7 +64,7 @@ static void *controller_thread(void *input)
     unsigned long abs_time_to_wait = input_get_first_occurence(p_input);
     time_utils_delay_until(abs_time_to_wait);
 
-    while(time_utils_get_time_ms() < config.time_limit_ms)
+    while(config.simulation_running && time_utils_get_time_ms() < config.time_limit_ms)
     {
         // Simuliraj obradu ulaza
         sprintf(msg, "Upravljac %d: zapoceta obrada", input_get_id(p_input));
