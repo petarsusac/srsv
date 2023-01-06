@@ -4,7 +4,7 @@
 #include "input.h"
 
 void controller_init(input_t **inputs, int num_inputs, unsigned long time_limit_ms);
-void controller_run();
+void controller_run(bool rt_sched);
 void controller_stop();
 
 #endif

@@ -7,8 +7,10 @@
 
 #include "simulator.h"
 #include "time_utils.h"
+#include "call.h"
 
 #define LOG_MESSAGE_LENGTH (100U)
+#define SIMULATOR_THREAD_PRIORITY (15U)
 
 static struct _config
 {
@@ -92,26 +94,63 @@ void controller_init(input_t **inputs, int num_inputs, unsigned long time_limit_
     srand(time(NULL));
 }
 
-void controller_run()
+void controller_run(bool rt_sched)
 {
     // Stvori dretve koje postavljaju ulaze
     pthread_t tid_sim[config.num_inputs];
     simulator_init(config.num_inputs, config.time_limit_ms);
-    for (int i = 0; i < config.num_inputs; i++)
+
+    if (!rt_sched)
     {
-        if (pthread_create(&tid_sim[i], NULL, &simulator_run, (void *) config.inputs[i]))
+        for (int i = 0; i < config.num_inputs; i++)
         {
-            perror("Error: pthread_create");
+            if (pthread_create(&tid_sim[i], NULL, &simulator_run, (void *) config.inputs[i]))
+            {
+                perror("Error: pthread_create");
+            }
+        }
+    }
+    else
+    {
+        pthread_attr_t attr;
+        CALL(STOP, pthread_attr_init, &attr);
+        CALL(STOP, pthread_attr_setinheritsched, &attr, PTHREAD_EXPLICIT_SCHED);
+        CALL(STOP, pthread_attr_setschedpolicy, &attr, SCHED_FIFO);
+        struct sched_param param;
+        param.sched_priority = SIMULATOR_THREAD_PRIORITY;
+        CALL(STOP, pthread_attr_setschedparam, &attr, &param);
+        
+        for (int i = 0; i < config.num_inputs; i++)
+        {
+            pthread_create(&tid_sim[i], &attr, &simulator_run, (void *) config.inputs[i]);
         }
     }
 
     // Stvori upravljacke dretve
     pthread_t tid_controller[config.num_inputs];
-    for (int i = 0; i < config.num_inputs; i++)
+    if (!rt_sched)
     {
-        if (pthread_create(&tid_controller[i], NULL, &controller_thread, (void *) config.inputs[i]))
+        for (int i = 0; i < config.num_inputs; i++)
         {
-            perror("Error: pthread_create");
+            if (pthread_create(&tid_controller[i], NULL, &controller_thread, (void *) config.inputs[i]))
+            {
+                perror("Error: pthread_create");
+            }
+        }
+    }
+    else
+    {
+        pthread_attr_t attr;
+        CALL(STOP, pthread_attr_init, &attr);
+        CALL(STOP, pthread_attr_setinheritsched, &attr, PTHREAD_EXPLICIT_SCHED);
+        CALL(STOP, pthread_attr_setschedpolicy, &attr, SCHED_FIFO);
+        
+        for (int i = 0; i < config.num_inputs; i++)
+        {
+            struct sched_param param;
+            param.sched_priority = config.num_inputs - input_get_id(config.inputs[i]) + 1;
+            CALL(STOP, pthread_attr_setschedparam, &attr, &param);
+            CALL(STOP, pthread_create, &tid_controller[i], &attr, &controller_thread, (void *) config.inputs[i]);
         }
     }
 
